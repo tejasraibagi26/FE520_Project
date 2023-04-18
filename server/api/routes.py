@@ -4,20 +4,20 @@ import uuid
 from bson import ObjectId, json_util
 from flask_cors import CORS, cross_origin
 
-from api import _db, app
+from api import _db, app, v1
 from api.data import cutsom_parser, stock_data, user
 from api.Handlers import errors_handlers
 from flask import json, jsonify, request
 
-CORS(app)
+CORS(v1)
 
 
-@app.route("/")
+@v1.route("/")
 def index():
     return "Hello, World!"
 
 
-@app.route("/db_check")
+@v1.route("/db_check")
 def test():
     if (_db is not None):
         return f'Connected to db, {_db}'
@@ -26,7 +26,7 @@ def test():
 
 
 # Deprecated
-@app.route("/tickers", methods=['GET'])
+@v1.route("/tickers", methods=['GET'])
 def get_tickers():
     tickers = stock_data.get_all_tickers()
     if (tickers):
@@ -41,7 +41,7 @@ def get_tickers():
 
 
 # Deprecated
-@app.route("/stock")
+@v1.route("/stock")
 def get_stock_data():
     stock = request.args.get('stock_name')
     timeline = request.args.get('timeline')
@@ -62,7 +62,7 @@ def get_stock_data():
         }
 
 
-@app.route("/stock/yf", methods=['GET'])
+@v1.route("/stock/yf", methods=['GET'])
 def get_stock_yf():
     stock_name = request.args.get('stock_name')
     check = [
@@ -98,7 +98,7 @@ def get_stock_yf():
         }
 
 
-@app.route("/auth/signup", methods=['POST'])
+@v1.route("/auth/signup", methods=['POST'])
 def add_user():
     username = request.json.get('username')
     password = request.json.get('password')
@@ -141,6 +141,9 @@ def add_user():
         }
 
     try:
+        user_exists = user.get_user_by_email(email, password, _db)
+        if (user_exists):
+            raise Exception('User already exists')
         user_data = {'username': username, 'password': password, 'email': email, 'stocks': [],
                      'watchlist': [], 'transactions': [], 'balance': 50.0}
         added_user = user.add_user(user_data, _db)
@@ -160,7 +163,7 @@ def add_user():
         }
 
 
-@app.route("/auth/login", methods=['POST'])
+@v1.route("/auth/login", methods=['POST'])
 @cross_origin()
 def get_user():
     email = request.json.get('email')
@@ -207,7 +210,7 @@ def get_user():
         }
 
 
-@app.route("/user/stocks", methods=['GET'])
+@v1.route("/user/stocks", methods=['GET'])
 def get_user_stocks():
     user_id = request.args.get('user_id')
 
@@ -247,7 +250,7 @@ def get_user_stocks():
         }
 
 
-@app.route("/trade/buy", methods=['POST'])
+@v1.route("/trade/buy", methods=['POST'])
 def buy_stock():
     # Get stock name, quantity, and price
     stock_name = request.json.get('stock_name')
@@ -325,7 +328,7 @@ def buy_stock():
 # Sell
 
 
-@ app.route("/trade/sell", methods=['POST'])
+@ v1.route("/trade/sell", methods=['POST'])
 def sell_stock():
     username = request.json.get('username')
     stock_name = request.json.get('stock_name')
@@ -394,7 +397,7 @@ def sell_stock():
 # Watchlist
 
 
-@ app.route("/watchlist/add", methods=['POST'])
+@ v1.route("/watchlist/add", methods=['POST'])
 def add_to_watchlist():
     stock_name = request.json.get('stock_name')
     _id = request.json.get('id')
@@ -447,7 +450,7 @@ def add_to_watchlist():
     }
 
 
-@ app.route("/watchlist/remove", methods=['POST'])
+@ v1.route("/watchlist/remove", methods=['POST'])
 def remove_from_watchlist():
     stock_name = request.json.get('stock_name')
     _id = request.json.get('id')
@@ -486,7 +489,7 @@ def remove_from_watchlist():
     }
 
 
-@app.route("/watchlist/get", methods=['GET'])
+@v1.route("/watchlist/get", methods=['GET'])
 def get_watchlist():
     _id = request.args.get('user_id')
     checks = [
@@ -524,7 +527,7 @@ def get_watchlist():
         }
 
 
-@ app.route("/transactions/get", methods=['GET'])
+@ v1.route("/transactions/get", methods=['GET'])
 def get_transactions():
     _id = request.args.get('user_id')
     checks = [
@@ -551,7 +554,7 @@ def get_transactions():
         return {
             'status-code': 200,
             'status': 'success',
-            'message': 'Watchlist found in db',
+            'message': 'Transactions found in db',
             'watchlist': transactions
         }
     except Exception as e:
@@ -560,3 +563,6 @@ def get_transactions():
             'status': 'failure',
             'message': f'{e}',
         }
+
+
+app.register_blueprint(v1)
