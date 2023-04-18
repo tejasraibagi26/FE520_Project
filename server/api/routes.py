@@ -2,10 +2,12 @@ import datetime
 import uuid
 
 from bson import ObjectId, json_util
-from flask import json, jsonify, request
 from flask_cors import CORS, cross_origin
 
-from api import _db, app, data, func
+from api import _db, app
+from api.data import cutsom_parser, stock_data, user
+from api.Handlers import errors_handlers
+from flask import json, jsonify, request
 
 CORS(app)
 
@@ -23,9 +25,10 @@ def test():
         return "Not connected to db"
 
 
+# Deprecated
 @app.route("/tickers", methods=['GET'])
 def get_tickers():
-    tickers = data.get_all_tickers()
+    tickers = stock_data.get_all_tickers()
     if (tickers):
         return {
             'data': tickers,
@@ -37,6 +40,7 @@ def get_tickers():
     }
 
 
+# Deprecated
 @app.route("/stock")
 def get_stock_data():
     stock = request.args.get('stock_name')
@@ -46,7 +50,7 @@ def get_stock_data():
     end_date = request.args.get('end_date')
 
     try:
-        stock_data = data.get_stock_data(
+        stock_data = stock_data.get_stock_data(
             stock, timeline, time_unit, start_date, end_date)
 
         return {
@@ -61,8 +65,26 @@ def get_stock_data():
 @app.route("/stock/yf", methods=['GET'])
 def get_stock_yf():
     stock_name = request.args.get('stock_name')
+    check = [
+        {
+            'data': stock_name,
+            'type': str,
+            'var_name': 'stock_name'
+        }
+    ]
+
     try:
-        stock_data = data.get_stock_yf(stock_name)
+        errors_handlers.isEmpty(check)
+        errors_handlers.isCorrectType(check)
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 400,
+            'error': f'{e}'
+        }
+
+    try:
+        stock_data = stock_data.get_stock_yf(stock_name)
         return {
             'data': stock_data,
             'status': 'success',
@@ -83,20 +105,48 @@ def add_user():
     email = request.json.get('email')
     conf_password = request.json.get('confPassword')
 
-    if (password != conf_password):
+    check = [
+        {
+
+            'data': username,
+            'type': str,
+            'var_name': 'username'
+        },
+        {
+            'data': password,
+            'type': str,
+            'var_name': 'password'
+        },
+        {
+            'data': email,
+            'type': str,
+            'var_name': 'email'
+        },
+        {
+            'data': conf_password,
+            'type': str,
+            'var_name': 'conf_password'
+        }
+    ]
+
+    try:
+        errors_handlers.isEmpty(check)
+        errors_handlers.isCorrectType(check)
+        errors_handlers.doesPasswordMatch(password, conf_password)
+    except Exception as e:
         return {
             'status': 'failure',
-            'message': 'Passwords do not match',
+            'message': f'{e}',
             'status-code': 400
         }
 
     try:
-        func.create_if_not_exists("user", _db)
-        # hash_password = func.encrypt(password)
+        user_data = {'username': username, 'password': password, 'email': email, 'stocks': [],
+                     'watchlist': [], 'transactions': [], 'balance': 50.0}
+        added_user = user.add_user(user_data, _db)
 
-        user = {'username': username, 'password': password, 'email': email, 'stocks': [],
-                'watchlist': [], 'transactions': [], 'balance': 50.0}
-        id = _db.user.insert_one(user).inserted_id
+        id = added_user.inserted_id
+
         return {
             'status': 'success',
             'message': 'User added to db with id: ' + str(id),
@@ -116,50 +166,85 @@ def get_user():
     email = request.json.get('email')
     password = request.json.get('password')
 
-    user_db = _db.user.find_one({'email': email})
-    if (user_db):
-        user_val = json.loads(json_util.dumps(user_db))
-
-        if (password != user_db["password"]):
-            return {
-                'status-code': 401,
-                'status': 'failure',
-                'message': 'Incorrect email or password'
-            }
-        del user_val['password']
-        return {
-            'status-code': 200,
-            'status': 'success',
-            'message': 'User found in db',
-            'user': user_val
+    check = [
+        {
+            'data': email,
+            'type': str,
+            'var_name': 'email'
+        },
+        {
+            'data': password,
+            'type': str,
+            'var_name': 'password'
         }
-    else:
+    ]
+
+    try:
+        errors_handlers.isEmpty(check)
+        errors_handlers.isCorrectType(check)
+    except Exception as e:
         return {
-            'status-code': 404,
             'status': 'failure',
-            'message': 'User not found in db'
+            'status-code': 400,
+            'message': f'{e}'
+        }
+
+    try:
+        find_user = user.get_user_by_email(email, password, _db)
+
+        return {
+            'status': 'success',
+            'status-code': 200,
+            'message': 'User found in db',
+            'user': cutsom_parser.parse_json(find_user)
+        }
+
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 500,
+            'message': f'{e}'
         }
 
 
 @app.route("/user/stocks", methods=['GET'])
 def get_user_stocks():
     user_id = request.args.get('user_id')
-    user_db = _db.user.find_one({'_id': ObjectId(user_id)})
-    if (user_db):
-        user_val = json.loads(json_util.dumps(user_db))
+
+    check = [
+        {
+            'data': user_id,
+            'type': str,
+            'var_name': 'user_id'
+        }
+    ]
+
+    try:
+        errors_handlers.isEmpty(check)
+        errors_handlers.isCorrectType(check)
+    except Exception as e:
         return {
-            'status-code': 200,
-            'status': 'success',
-            'message': 'Stocks found',
-            'stocks': user_val['stocks']
+            'status': 'failure',
+            'status-code': 400,
+            'message': f'{e}'
         }
 
-    return {
-        'status-code': 404,
-        'status': 'failure',
-        'message': 'User not found in db'
-    }
-    pass
+    try:
+        user_db = user.get_user_by_id(ObjectId(user_id), _db)
+        stocks = user.get_stocks_from_user(user_db)
+
+        return {
+            'status': 'success',
+            'status-code': 200,
+            'message': 'Stocks found',
+            'stocks': stocks
+        }
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 404,
+            'message': f'{e}'
+        }
 
 
 @app.route("/trade/buy", methods=['POST'])
@@ -169,6 +254,7 @@ def buy_stock():
     quantity = request.json.get('quantity')
     price = request.json.get('price')
     username = request.json.get('username')
+    _id = request.json.get('_id')
     # Set time of transaction
     time = datetime.datetime.now()
 
@@ -197,12 +283,17 @@ def buy_stock():
             'data': time,
             'type': datetime.datetime,
             'var_name': 'time'
+        },
+        {
+            'data': _id,
+            'type': str,
+            'var_name': '_id'
         }
     ]
 
     try:
-        func.isEmpty(checks)
-        func.isCorrectType(checks)
+        errors_handlers.isEmpty(checks)
+        errors_handlers.isCorrectType(checks)
     except Exception as e:
         return {
             'status': 'failure',
@@ -215,16 +306,21 @@ def buy_stock():
         "transaction_id": str(uuid.uuid4()), "stock_name": stock_name, "quantity": quantity, "price": price, "time": time, "type": "buy"}
     }}
 
-    print(add_stock)
+    try:
+        modify = user.update_user(_id, add_stock, _db)
 
-    modify = _db.user.update_one(
-        {'username': username}, add_stock).modified_count
-
-    return {
-        'status': 'success',
-        'message': 'Stock bought',
-        'modified_count': modify
-    }
+        return {
+            'status': 'success',
+            'status-code': 200,
+            'message': 'Stock bought',
+            'modified': modify
+        }
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 500,
+            'message': f'{e}'
+        }
 
 # Sell
 
@@ -236,6 +332,7 @@ def sell_stock():
     quantity = request.json.get('quantity')
     price = request.json.get('price')
     time = datetime.datetime.now()
+    _id = request.json.get('_id')
 
     checks = [
         {
@@ -262,12 +359,17 @@ def sell_stock():
             'data': time,
             'type': datetime.datetime,
             'var_name': 'time'
+        },
+        {
+            'data': _id,
+            'type': str,
+            'var_name': '_id'
         }
     ]
 
     try:
-        func.isEmpty(checks)
-        func.isCorrectType(checks)
+        errors_handlers.isEmpty(checks)
+        errors_handlers.isCorrectType(checks)
     except Exception as e:
         return {
             'status': 'failure',
@@ -279,13 +381,13 @@ def sell_stock():
         "stock_name": stock_name, "quantity": quantity, "price": price, "time": time, "type": "buy"}}, "$push": {"transactions": {
             "transaction_id": str(uuid.uuid4()), "stock_name": stock_name, "quantity": quantity, "price": price, "time": time, "type": "sell"}}}
 
-    modify = _db.user.update_one(
-        {'username': username}, remove_stock).modified_count
+    modify = user.update_user(ObjectId(_id), remove_stock, _db)
 
     return {
         'status': 'success',
+        'status-code': 200,
         'message': 'Stock sold',
-        'modified_count': modify
+        'modified': modify
     }
 
 
@@ -299,15 +401,43 @@ def add_to_watchlist():
 
     added_time = datetime.datetime.now()
 
+    checks = [
+        {
+            'data': stock_name,
+            'type': str,
+            'var_name': 'stock_name'
+        },
+        {
+            'data': _id,
+            'type': str,
+            'var_name': 'id'
+        },
+        {
+            'data': added_time,
+            'type': datetime.datetime,
+            'var_name': 'added_time'
+        }
+    ]
+
+    try:
+        errors_handlers.isEmpty(checks)
+        errors_handlers.isCorrectType(checks)
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 400,
+            'message': f'{e}',
+        }
+
     data = {
         'stock_name': stock_name,
         'added_time': added_time
     }
 
     add_stock = {"$push": {"watchlist": data}}
-
-    modify = _db.user.update_one(
-        {'_id': ObjectId(_id)}, add_stock).modified_count
+    modify = user.update_user(_id, add_stock, _db)
+    # modify = _db.user.update_one(
+    #     {'_id': ObjectId(_id)}, add_stock).modified_count
 
     return {
         'status': 'success',
@@ -336,8 +466,8 @@ def remove_from_watchlist():
     ]
 
     try:
-        func.isEmpty(checks)
-        func.isCorrectType(checks)
+        errors_handlers.isEmpty(checks)
+        errors_handlers.isCorrectType(checks)
     except Exception as e:
         return {
             'status': 'failure',
@@ -347,31 +477,30 @@ def remove_from_watchlist():
     remove_stock = {"$pull": {"watchlist": {
         'stock_name': stock_name}}}
 
-    modify = _db.user.update_one(
-        {'_id': ObjectId(_id)}, remove_stock).modified_count
+    modify = user.update_user(_id, remove_stock, _db)
 
     return {
         'status': 'success',
         'message': 'Stock removed from watchlist',
-        'modified_count': modify
+        'modified': modify
     }
 
 
 @app.route("/watchlist/get", methods=['GET'])
 def get_watchlist():
-    user_id = request.args.get('user_id')
+    _id = request.args.get('user_id')
     checks = [
         {
 
-            'data': user_id,
+            'data': _id,
             'type': str,
-            'var_name': 'user_id'
+            'var_name': '_id'
         }
     ]
 
     try:
-        func.isEmpty(checks)
-        func.isCorrectType(checks)
+        errors_handlers.isEmpty(checks)
+        errors_handlers.isCorrectType(checks)
     except Exception as e:
         return {
             'status-code': 400,
@@ -379,38 +508,37 @@ def get_watchlist():
             'message': f'{e}',
         }
 
-    user_db = _db.user.find_one({'_id': ObjectId(user_id)})
-    print(user_db)
-    if (user_db):
+    try:
+        watchlist = user.get_user_watchlist(_id, _db)
         return {
             'status-code': 200,
             'status': 'success',
             'message': 'Watchlist found in db',
-            'watchlist': user_db['watchlist']
+            'watchlist': watchlist
         }
-    else:
+    except Exception as e:
         return {
             'status-code': 400,
             'status': 'failure',
-            'message': 'Watchlist not found in db',
+            'message': f'{e}',
         }
 
 
 @ app.route("/transactions/get", methods=['GET'])
 def get_transactions():
-    user_id = request.args.get('user_id')
+    _id = request.args.get('user_id')
     checks = [
         {
 
-            'data': user_id,
+            'data': _id,
             'type': str,
-            'var_name': 'user_id'
+            'var_name': '_id'
         }
     ]
 
     try:
-        func.isEmpty(checks)
-        func.isCorrectType(checks)
+        errors_handlers.isEmpty(checks)
+        errors_handlers.isCorrectType(checks)
     except Exception as e:
         return {
             'status-code': 400,
@@ -418,18 +546,17 @@ def get_transactions():
             'message': f'{e}',
         }
 
-    user_db = _db.user.find_one({'_id': ObjectId(user_id)})
-    print(user_db)
-    if (user_db):
+    try:
+        transactions = user.get_user_transactions(_id, _db)
         return {
             'status-code': 200,
             'status': 'success',
-            'message': 'Transctions found in db',
-            'transactions': user_db['transactions']
+            'message': 'Watchlist found in db',
+            'watchlist': transactions
         }
-    else:
+    except Exception as e:
         return {
-            'status-code': 404,
+            'status-code': 400,
             'status': 'failure',
-            'message': 'Transctions not found in db',
+            'message': f'{e}',
         }
