@@ -3,7 +3,9 @@ import urllib.request
 
 import yfinance as yf
 
-TEST_API_KEY = "vWs44siyXm0JV9zY43IeOTLSw7FhXMU7"
+TEST_API_KEY = "deprecated"
+
+# Deprecated
 
 
 def get_stock_data(stock, timeline, time_unit, start_date, end_date):
@@ -37,6 +39,8 @@ def get_stock_yf(stock_name):
         'high': high,
         'ticker': stock_name
     }
+
+# Deprecated
 
 
 def get_all_tickers():
