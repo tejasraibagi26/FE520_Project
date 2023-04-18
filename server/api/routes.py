@@ -84,9 +84,9 @@ def get_stock_yf():
         }
 
     try:
-        stock_data = stock_data.get_stock_yf(stock_name)
+        stock_data_res = stock_data.get_stock_yf(stock_name)
         return {
-            'data': stock_data,
+            'data': stock_data_res,
             'status': 'success',
             'status-code': 200
         }
@@ -555,7 +555,7 @@ def get_transactions():
             'status-code': 200,
             'status': 'success',
             'message': 'Transactions found in db',
-            'watchlist': transactions
+            'transactions': transactions
         }
     except Exception as e:
         return {

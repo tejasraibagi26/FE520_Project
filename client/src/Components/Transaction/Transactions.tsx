@@ -5,7 +5,7 @@ import { ITransaction } from "../../Interfaces/interfaces";
 import "./index.css";
 const Transactions = () => {
   const userId = window.localStorage.getItem("id");
-  const API_URL = "http://127.0.0.1:5000";
+  const API_URL = "http://127.0.0.1:5000/api/v1";
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
 
   useEffect(() => {
@@ -30,7 +30,10 @@ const Transactions = () => {
           {transactions.map((transaction: ITransaction) => {
             return (
               <>
-                <Card transaction={transaction} />
+                <Card
+                  transaction={transaction}
+                  key={transaction.transaction_id}
+                />
               </>
             );
           })}

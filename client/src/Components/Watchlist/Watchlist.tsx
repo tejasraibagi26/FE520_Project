@@ -10,7 +10,7 @@ const Watchlist = () => {
   const user_id: any = window.localStorage.getItem("id");
   const stateWatchlists = useAppSelector((state) => state.user.watchlist);
   const navigator = useNavigate();
-  const API_URL = "http://127.0.0.1:5000";
+  const API_URL = "http://127.0.0.1:5000/api/v1";
   const [watchlist, setWatchlist] = useState<IWatchlist[]>([]);
 
   useEffect(() => {
