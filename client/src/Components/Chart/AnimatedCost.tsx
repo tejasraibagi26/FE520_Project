@@ -22,7 +22,7 @@ const AnimatedCost: React.FC<AnimatedCostProps> = ({ cost }) => {
   const animate = () => {
     let start = parseFloat(previousCost.toFixed(2));
     const end = parseFloat(cost.toFixed(2));
-    let step = (end - start) / 20; // Number of frames
+    let step = (end - start) / 20;
     let count = start;
     let frame = 0;
 

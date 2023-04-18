@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Chart from "./Components/Chart/Chart";
 import Nav from "./Components/Nav";
-
 import {
   DashboardPage,
   HomePage,
@@ -15,12 +14,8 @@ import {
   WatchlistPage,
 } from "./Pages";
 
-import { useAppSelector } from "./Redux/hooks";
-
 const App = () => {
   const [loggedIn, setLoggedIn] = useState(false);
-
-  const user = useAppSelector((state) => state.user);
 
   const updateLoggedIn = (value: boolean) => {
     setLoggedIn(value);

@@ -7,7 +7,7 @@ import { useAppSelector } from "../../Redux/hooks";
 import "./index.css";
 
 const Dashboard = () => {
-  const API_URL = "http://127.0.0.1:5000";
+  const API_URL = "http://127.0.0.1:5000/api/v1";
   const user = useAppSelector((state) => state.user);
   const id = window.localStorage.getItem("id");
   const navigator = useNavigate();
