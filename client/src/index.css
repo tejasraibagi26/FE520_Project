@@ -1,0 +1,92 @@
+section {
+  width: 100%;
+  height: calc(100vh - var(--nav-height));
+  background-color: #050505 !important;
+}
+:root {
+  --nav-height: 80px;
+  --accent-color: rgb(25, 230, 140);
+  --bg-color: white;
+  --danger-color: rgb(255, 0, 0);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  color: white;
+}
+
+body {
+  background-color: #050505;
+}
+
+.btn {
+  background-color: var(--accent-color);
+  padding: 10px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 100ms ease-in-out;
+}
+
+.border {
+  border-radius: 100px;
+}
+
+.disabled {
+  opacity: 0.9;
+  cursor: not-allowed;
+}
+.bold {
+  font-weight: bold;
+}
+p,
+a {
+  text-decoration: none;
+}
+
+/* a {
+  color: black;
+} */
+
+.error {
+  color: red !important;
+  margin-bottom: 10px;
+}
+
+.info {
+  color: #050505;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--bg-color);
+  border-radius: 50%;
+}
+
+.spinner::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+svg {
+  background-color: transparent;
+}
+
+.icon-bg-black {
+  background-color: #050505;
+}

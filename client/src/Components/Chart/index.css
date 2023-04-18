@@ -1,0 +1,72 @@
+.chart {
+  width: 80% !important;
+  overflow: hidden;
+}
+
+.cost-indicator {
+  position: relative;
+  font-size: 20px;
+  animation: cost-animation 0.5s ease-in-out;
+}
+
+.ticker-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+@keyframes cost-animation {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.2);
+  }
+}
+
+.animate-cost {
+  animation: cost-animation 0.5s ease-in-out;
+}
+
+.cost {
+  display: inline-flex;
+  align-items: center;
+}
+
+.digit,
+.dot,
+.dollar {
+  font-size: 1.5rem;
+  color: inherit;
+  transition: transform 0.3s ease-out;
+}
+
+.green {
+  color: var(--accent-color) !important;
+}
+
+.red {
+  color: var(--danger-color) !important;
+}
+
+@keyframes up {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes down {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+}
