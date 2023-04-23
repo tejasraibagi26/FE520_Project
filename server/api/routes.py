@@ -210,6 +210,44 @@ def get_user():
         }
 
 
+@v1.route("/user", methods=['GET'])
+def get_user_by_id():
+    _id = request.args.get('id')
+
+    check = [
+        {
+            'data': _id,
+            'type': str,
+            'var_name': '_id'
+        }
+    ]
+
+    try:
+        errors_handlers.isEmpty(check)
+        errors_handlers.isCorrectType(check)
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 400,
+            'message': f'{e}'
+        }
+
+    try:
+        data = user.get_user_by_id(ObjectId(_id), _db)
+        return {
+            'status': 'success',
+            'status-code': 200,
+            'message': 'User found in db',
+            'user': cutsom_parser.parse_json(data)
+        }
+    except Exception as e:
+        return {
+            'status': 'failure',
+            'status-code': 500,
+            'message': f'{e}'
+        }
+
+
 @v1.route("/user/stocks", methods=['GET'])
 def get_user_stocks():
     user_id = request.args.get('user_id')

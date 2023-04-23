@@ -12,12 +12,6 @@ export const navItems_login = [
     navItemLink: "/search",
   },
   {
-    id: 2,
-    navItemName: "Portfolio",
-    navItemId: "portfolio",
-    navItemLink: "/portfolio",
-  },
-  {
     id: 3,
     navItemName: "Transactions",
     navItemId: "transactions",

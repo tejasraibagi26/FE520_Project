@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { GrAdd, GrCheckmark } from "react-icons/gr";
 import { useParams } from "react-router-dom";
 import { tickers } from "../../Data/Tickers";
-import { useAppSelector } from "../../Redux/hooks";
 import LineChart from "../Chart";
 import "./index.css";
 
@@ -11,16 +10,18 @@ const Stock = () => {
   // Get stock name from URL
   const { stockName } = useParams<{ stockName: string }>();
   const [transactionType, setTransactionType] = useState("buy");
-  const [quantity, setQuantity] = useState<number>(0);
-  const [amount, setAmount] = useState<number>(0);
+  const [quantity, setQuantity] = useState<any>(0);
+  const [amount, setAmount] = useState<any>(0);
   const [transactionMethod, setTransactionMethod] = useState("quantiy");
   const [canBuy, setCanBuy] = useState(false);
+  const [canSell, setCanSell] = useState(false);
   const id = window.localStorage.getItem("id");
   const companyName = tickers.filter((t: any) => t.symbol === stockName)[0]
     .companyName;
   const API_URL = "http://127.0.0.1:5000/api/v1";
   const [stockInWatchlist, setStockInWatchlist] = useState(false);
-  const balance = useAppSelector((state) => state.user.balance);
+  const [balance, setBalance] = useState<number>(0);
+  const [currentStockHoldings, setCurrentStockHoldings] = useState<number>(0);
   const addToWatchlist = () => {
     axios
       .post(`${API_URL}/watchlist/add`, {
@@ -49,6 +50,25 @@ const Stock = () => {
         console.log(err);
       });
   };
+
+  useEffect(() => {
+    axios
+      .get(`${API_URL}/user`, {
+        params: {
+          id: id,
+        },
+      })
+      .then((res) => {
+        console.log(res.data);
+        setBalance(res.data.user.balance);
+        const uStocks = res.data.user.stocks;
+        const stock = uStocks.filter((s: any) => s.stock_name === stockName);
+        if (stock.length > 0) {
+          setCurrentStockHoldings(stock[0].quantity);
+        }
+      })
+      .catch((err) => console.log(err));
+  }, []);
 
   useEffect(() => {
     axios
@@ -150,12 +170,29 @@ const Stock = () => {
     const transactionCost =
       transactionMethod === "quantiy" ? quantity * cost : amount;
 
-    if (transactionCost < balance) {
+    const amountToQuantity = Number((amount / cost).toFixed(2));
+    console.log("quant", amountToQuantity);
+    console.log("owned", currentStockHoldings);
+
+    if (transactionType === "buy" && transactionCost < balance) {
       setCanBuy(true);
     } else {
       setCanBuy(false);
     }
-  }, [quantity, amount]);
+
+    if (
+      (transactionType === "sell" && currentStockHoldings >= transactionCost) ||
+      (transactionType === "sell" && currentStockHoldings >= amountToQuantity)
+    ) {
+      setCanSell(true);
+    } else {
+      setCanSell(false);
+    }
+  }, [quantity, amount, cost]);
+
+  const updateTab = (tab: string) => {
+    setTransactionType(tab);
+  };
 
   return (
     <section id="stock">
@@ -198,10 +235,16 @@ const Stock = () => {
           <div className="right">
             <div className="buy-stock">
               <div className="options">
-                <div className="option active">
+                <div
+                  className={`option ${transactionType === "buy" && "active"}`}
+                  onClick={() => updateTab("buy")}
+                >
                   <div className="option-title">Buy</div>
                 </div>
-                <div className="option">
+                <div
+                  className={`option ${transactionType === "sell" && "active"}`}
+                  onClick={() => updateTab("sell")}
+                >
                   <div className="option-title">Sell</div>
                 </div>
               </div>
@@ -225,27 +268,45 @@ const Stock = () => {
                   quantity={quantity}
                   amount={amount}
                 />
-              ) : null}
+              ) : (
+                <SellForm
+                  transactionMethod={transactionMethod}
+                  setQuantity={setQuantity}
+                  setAmount={setAmount}
+                  quantity={quantity}
+                  amount={amount}
+                />
+              )}
             </div>
             <div className="spacer"></div>
             <div className="finalize">
               <div className="total">
                 <div className="total-value">
                   {transactionMethod === "quantiy"
-                    ? `Buy ${quantity} share(s) of ${stockName} for $${(
+                    ? `${
+                        transactionType === "buy" ? "Buy" : "Sell"
+                      } ${quantity} share(s) of ${stockName} for $${(
                         quantity * cost
                       ).toFixed(2)}`
-                    : `Buy ${(amount / cost).toFixed(
-                        2
-                      )} shares of ${stockName}`}
+                    : `${transactionType === "buy" ? "Buy" : "Sell"} ${(
+                        amount / cost
+                      ).toFixed(2)} shares of ${stockName}`}
                 </div>
                 <div className="spacer"></div>
                 <div
                   className={`confirm-btn btn border bold ${
-                    !canBuy && "illegal"
+                    !canBuy && !canSell && "illegal"
                   }`}
                 >
-                  <div>{canBuy ? "Confirm & Buy" : "Insufficient Balance"}</div>
+                  {transactionType === "buy" ? (
+                    <div>
+                      {canBuy ? "Confirm & Buy" : "Insufficient Balance"}
+                    </div>
+                  ) : (
+                    <div>
+                      {canSell ? "Confirm & Sell" : "Insufficient Quantity"}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -256,7 +317,7 @@ const Stock = () => {
   );
 };
 
-type IBuyFormProps = {
+type IFormProps = {
   transactionMethod: string;
   quantity: number;
   amount?: number;
@@ -273,16 +334,15 @@ type ITransactionFieldProps = {
   setQuantity: (value: number) => void;
   setAmount: (value: number) => void;
 };
-
 const BuyForm = ({
   transactionMethod,
   quantity,
   amount,
   setQuantity,
   setAmount,
-}: IBuyFormProps) => {
+}: IFormProps) => {
   return (
-    <div className="buy-form">
+    <div className="sell-form">
       {transactionMethod === "quantiy" ? (
         <TransactionField
           transactionTitle="Quantity"
@@ -306,8 +366,36 @@ const BuyForm = ({
   );
 };
 
-const SellForm = () => {
-  return <div className="sell-form"></div>;
+const SellForm = ({
+  transactionMethod,
+  quantity,
+  amount,
+  setQuantity,
+  setAmount,
+}: IFormProps) => {
+  return (
+    <div className="sell-form">
+      {transactionMethod === "quantiy" ? (
+        <TransactionField
+          transactionTitle="Quantity"
+          transactionFieldType="number"
+          transactionUniqueIdentifier="quantity"
+          quantity={quantity}
+          setQuantity={setQuantity}
+          setAmount={setAmount}
+        />
+      ) : (
+        <TransactionField
+          transactionTitle="Amount"
+          transactionFieldType="number"
+          transactionUniqueIdentifier="amount"
+          amount={amount}
+          setQuantity={setQuantity}
+          setAmount={setAmount}
+        />
+      )}
+    </div>
+  );
 };
 
 const TransactionField = ({
@@ -326,7 +414,7 @@ const TransactionField = ({
         type={transactionFieldType}
         name={transactionUniqueIdentifier}
         id={transactionUniqueIdentifier}
-        step={0.001}
+        step={0.01}
         value={transactionUniqueIdentifier === "quantity" ? quantity : amount}
         onChange={(e) =>
           transactionUniqueIdentifier === "quantity"

@@ -86,6 +86,10 @@
   gap: 1rem;
 }
 
+.sell-form {
+  margin-top: 1rem;
+}
+
 .buy-form .form-group {
   width: 100%;
   display: flex;
