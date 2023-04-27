@@ -23,6 +23,17 @@ export type IStock = {
   quantity: number;
 };
 
+export type IStockDashboard = {
+  price: number;
+  stock_name: string;
+  time: string;
+  type: string;
+  quantity: number;
+  average_price: number;
+  total_count: number;
+  total_price: number;
+};
+
 export type IWatchlist = {
   stock_name: string;
   added_time: string;

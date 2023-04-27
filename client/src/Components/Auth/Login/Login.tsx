@@ -63,6 +63,7 @@ const Login = ({ updateLoggedIn }: ILoginPageProps) => {
         userDispatch(setUser(res.data.user));
         navigate("/dashboard");
         window.localStorage.setItem("id", res.data.user._id.$oid);
+        window.localStorage.setItem("username", res.data.user.username);
       })
       .catch((err) => {
         console.log(err.message);

@@ -1,0 +1,15 @@
+{
+  "stockName": "AAPL",
+  "totalShares": 5.2,
+  "averageBuyPrice": 520.0,
+  "data": [
+    {
+      "txnType": "buy",
+      "txnDate": "2018-01-01",
+      "perSharePrice": 100.0,
+      "txnQuantity": 5.2,
+      "txnAmount": 520.0,
+      "txnId": "1234"
+    }
+  ]
+}
