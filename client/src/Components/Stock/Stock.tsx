@@ -16,6 +16,7 @@ const Stock = () => {
   const [canBuy, setCanBuy] = useState(false);
   const [canSell, setCanSell] = useState(false);
   const id = window.localStorage.getItem("id");
+  const username = window.localStorage.getItem("username");
   const companyName = tickers.filter((t: any) => t.symbol === stockName)[0]
     .companyName;
   const API_URL = "http://127.0.0.1:5000/api/v1";
@@ -171,10 +172,8 @@ const Stock = () => {
       transactionMethod === "quantiy" ? quantity * cost : amount;
 
     const amountToQuantity = Number((amount / cost).toFixed(2));
-    console.log("quant", amountToQuantity);
-    console.log("owned", currentStockHoldings);
 
-    if (transactionType === "buy" && transactionCost < balance) {
+    if (transactionType === "buy" && transactionCost <= balance) {
       setCanBuy(true);
     } else {
       setCanBuy(false);
@@ -192,6 +191,68 @@ const Stock = () => {
 
   const updateTab = (tab: string) => {
     setTransactionType(tab);
+  };
+
+  const buyStock = (transactionMethod: any) => {
+    const transactionCost: number =
+      transactionMethod === "quantiy"
+        ? Number(quantity * cost)
+        : Number(amount);
+    const quantityShares =
+      transactionMethod === "quantiy"
+        ? Number(quantity.toFixed(2))
+        : Number((amount / cost).toFixed(2));
+    const transactionObject = {
+      _id: id,
+      username: username,
+      stock_name: stockName,
+      quantity: quantityShares,
+      price: Number(parseFloat(transactionCost.toFixed(2))),
+      perSharePrice: Number(parseFloat(cost.toFixed(2))),
+    };
+
+    axios
+      .post(`${API_URL}/trade/buy`, transactionObject)
+      .then((res) => {
+        console.log(res.data);
+        if (res.data.status === "failure") {
+          alert("Error: " + res.data.message);
+          return;
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+  const sellStock = () => {
+    const transactionCost: number =
+      transactionMethod === "quantiy"
+        ? Number(quantity * cost)
+        : Number(amount);
+    const quantityShares =
+      transactionMethod === "quantiy"
+        ? Number(quantity.toFixed(2))
+        : Number((amount / cost).toFixed(2));
+    const transactionObject = {
+      _id: id,
+      username: username,
+      stock_name: stockName,
+      quantity: quantityShares,
+      price: Number(parseFloat(transactionCost.toFixed(2))),
+    };
+
+    axios
+      .post(`${API_URL}/trade/sell`, transactionObject)
+      .then((res) => {
+        console.log(res.data);
+        if (res.data.status === "failure") {
+          alert("Error: " + res.data.message);
+          return;
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   return (
@@ -297,6 +358,11 @@ const Stock = () => {
                   className={`confirm-btn btn border bold ${
                     !canBuy && !canSell && "illegal"
                   }`}
+                  onClick={
+                    transactionType === "buy"
+                      ? () => buyStock(transactionMethod)
+                      : sellStock
+                  }
                 >
                   {transactionType === "buy" ? (
                     <div>
