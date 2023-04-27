@@ -13,6 +13,9 @@ const Transactions = () => {
       .get(`${API_URL}/transactions/get?user_id=${userId}`)
       .then((res) => {
         console.log(res.data);
+        const data = res.data.transactions;
+        // reverse the array to show the latest transactions first
+        data.reverse();
         setTransactions(res.data.transactions);
       })
       .catch((err) => {

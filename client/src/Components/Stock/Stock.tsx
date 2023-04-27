@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
+import { AiOutlineClose } from "react-icons/ai";
 import { GrAdd, GrCheckmark } from "react-icons/gr";
 import { useParams } from "react-router-dom";
 import { tickers } from "../../Data/Tickers";
@@ -22,7 +23,12 @@ const Stock = () => {
   const API_URL = "http://127.0.0.1:5000/api/v1";
   const [stockInWatchlist, setStockInWatchlist] = useState(false);
   const [balance, setBalance] = useState<number>(0);
-  const [currentStockHoldings, setCurrentStockHoldings] = useState<number>(0);
+  const [currentStockHoldings, setCurrentStockHoldings] = useState<number>(-1);
+  const [axiosLoading, setAxiosLoading] = useState<boolean>(false);
+  const [transactionStatus, setTransactionStatus] = useState<boolean | null>(
+    true
+  );
+
   const addToWatchlist = () => {
     axios
       .post(`${API_URL}/watchlist/add`, {
@@ -53,6 +59,7 @@ const Stock = () => {
   };
 
   useEffect(() => {
+    setTransactionStatus(null);
     axios
       .get(`${API_URL}/user`, {
         params: {
@@ -60,12 +67,11 @@ const Stock = () => {
         },
       })
       .then((res) => {
-        console.log(res.data);
         setBalance(res.data.user.balance);
         const uStocks = res.data.user.stocks;
-        const stock = uStocks.filter((s: any) => s.stock_name === stockName);
+        const stock = uStocks.filter((s: any) => s.stockName === stockName);
         if (stock.length > 0) {
-          setCurrentStockHoldings(stock[0].quantity);
+          setCurrentStockHoldings(stock[0].totalShares);
         }
       })
       .catch((err) => console.log(err));
@@ -171,7 +177,10 @@ const Stock = () => {
     const transactionCost =
       transactionMethod === "quantiy" ? quantity * cost : amount;
 
-    const amountToQuantity = Number((amount / cost).toFixed(2));
+    const transactionQuantity =
+      transactionMethod === "quantiy"
+        ? quantity
+        : Number((amount / cost).toFixed(2));
 
     if (transactionType === "buy" && transactionCost <= balance) {
       setCanBuy(true);
@@ -180,8 +189,8 @@ const Stock = () => {
     }
 
     if (
-      (transactionType === "sell" && currentStockHoldings >= transactionCost) ||
-      (transactionType === "sell" && currentStockHoldings >= amountToQuantity)
+      transactionType === "sell" &&
+      currentStockHoldings >= transactionQuantity
     ) {
       setCanSell(true);
     } else {
@@ -193,7 +202,9 @@ const Stock = () => {
     setTransactionType(tab);
   };
 
-  const buyStock = (transactionMethod: any) => {
+  const buyStock = () => {
+    setAxiosLoading(true);
+    setTransactionStatus(null);
     const transactionCost: number =
       transactionMethod === "quantiy"
         ? Number(quantity * cost)
@@ -214,17 +225,22 @@ const Stock = () => {
     axios
       .post(`${API_URL}/trade/buy`, transactionObject)
       .then((res) => {
-        console.log(res.data);
         if (res.data.status === "failure") {
-          alert("Error: " + res.data.message);
-          return;
+          setTransactionStatus(false);
+        } else {
+          setTransactionStatus(true);
         }
       })
       .catch((err) => {
         console.log(err);
       });
+
+    setAxiosLoading(false);
   };
+
   const sellStock = () => {
+    setAxiosLoading(true);
+    setTransactionStatus(null);
     const transactionCost: number =
       transactionMethod === "quantiy"
         ? Number(quantity * cost)
@@ -246,17 +262,43 @@ const Stock = () => {
       .then((res) => {
         console.log(res.data);
         if (res.data.status === "failure") {
-          alert("Error: " + res.data.message);
-          return;
+          setTransactionStatus(false);
+        } else {
+          setTransactionStatus(true);
         }
       })
       .catch((err) => {
         console.log(err);
       });
+
+    setAxiosLoading(false);
   };
 
   return (
     <section id="stock">
+      {transactionStatus !== null && (
+        <>
+          <div className="banner">
+            <div
+              className={`banner-content ${transactionStatus ? "buy" : "sell"}`}
+            >
+              <div className="banner-text">
+                <span className="banner-message">
+                  {transactionStatus === true
+                    ? "Your transaction was successful!"
+                    : "Your transaction was unsuccessful!"}
+                </span>
+                <span className="close">
+                  <AiOutlineClose
+                    onClick={() => setTransactionStatus(null)}
+                    title="Close"
+                  />
+                </span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       {loading ? (
         <h1 className="center" style={{ margin: "2rem 4rem" }}>
           Loading...
@@ -358,20 +400,22 @@ const Stock = () => {
                   className={`confirm-btn btn border bold ${
                     !canBuy && !canSell && "illegal"
                   }`}
-                  onClick={
-                    transactionType === "buy"
-                      ? () => buyStock(transactionMethod)
-                      : sellStock
-                  }
+                  onClick={transactionType === "buy" ? buyStock : sellStock}
                 >
                   {transactionType === "buy" ? (
-                    <div>
-                      {canBuy ? "Confirm & Buy" : "Insufficient Balance"}
-                    </div>
-                  ) : (
+                    !axiosLoading ? (
+                      <div>
+                        {canBuy ? "Confirm & Buy" : "Insufficient Balance"}
+                      </div>
+                    ) : (
+                      <div>Purchasing...</div>
+                    )
+                  ) : !axiosLoading ? (
                     <div>
                       {canSell ? "Confirm & Sell" : "Insufficient Quantity"}
                     </div>
+                  ) : (
+                    <div>Selling...</div>
                   )}
                 </div>
               </div>

@@ -388,6 +388,7 @@ def sell_stock():
             "status-code": 200,
             "message": "Stock sold",
             "modified": update,
+            "new_balance": round(new_balance, 2),
         }
 
     update_stock = {
@@ -418,6 +419,7 @@ def sell_stock():
         "status-code": 200,
         "message": "Stock sold",
         "modified": modify,
+        "new_balance": round(new_balance, 2),
     }
 
 
