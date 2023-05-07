@@ -73,7 +73,7 @@ const StockCard = ({ stock, navigator }: any) => {
           <div className="data">
             <p className="stock_name">{stock.stockName}</p>
             <p className="color-light">
-              Avg Buy Price: ${stock.averageBuyPrice}
+              Avg Buy Price: ${stock.averageBuyPrice.toFixed(2)}
             </p>
           </div>
         </div>

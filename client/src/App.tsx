@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Chart from "./Components/Chart/Chart";
 import Nav from "./Components/Nav";
 import {
+  AccountPage,
   DashboardPage,
   HomePage,
   LoginPage,
@@ -43,7 +43,7 @@ const App = () => {
           <Route path="/stock/:stockName" element={<StockPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
-          <Route path="/chart" element={<Chart />} />
+          <Route path="/account" element={<AccountPage />} />
           <Route
             path="/logout"
             element={<LogoutPage updateLoggedIn={updateLoggedIn} />}
