@@ -43,3 +43,10 @@ export type IBalance = {
   amount: number;
   type: string;
 };
+
+export type ITicker = {
+  symbol: string;
+  companyName: string;
+  industry: string;
+  marketCap: number;
+};

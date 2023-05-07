@@ -94,3 +94,19 @@ def get_user_transactions(_id: str, _db) -> list:
         raise Exception(e)
 
     return user["transactions"]
+
+
+def add_balance(_id: str, _db, amount):
+    try:
+        user = get_user_by_id(ObjectId(_id), _db)
+    except Exception as e:
+        raise Exception(e)
+
+    user["balance"] += amount
+
+    try:
+        update_user(_id, {"$set": user}, _db)
+    except Exception as e:
+        raise Exception(e)
+
+    return user["balance"]

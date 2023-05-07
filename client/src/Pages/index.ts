@@ -1,3 +1,4 @@
+import AccountPage from "./AccountPage";
 import DashboardPage from "./DashboardPage";
 import HomePage from "./HomePage";
 import LoginPage from "./LoginPage";
@@ -18,4 +19,5 @@ export {
   SearchPage,
   StockPage,
   LogoutPage,
+  AccountPage,
 };

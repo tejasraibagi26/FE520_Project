@@ -1,4 +1,6 @@
-export const tickers = [
+import { ITicker } from "../Interfaces/interfaces";
+
+export const tickers: ITicker[] = [
   {
     symbol: "A",
     companyName: "Agilent Technologies, Inc.",
@@ -7107,7 +7109,7 @@ export const tickers = [
     symbol: "CLCO",
     companyName: "Cool Company Ltd.",
     industry: "Marine Shipping",
-    marketCap: "",
+    marketCap: 0,
   },
   {
     symbol: "CLDT",

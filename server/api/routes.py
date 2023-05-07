@@ -25,38 +25,6 @@ def test():
         return "Not connected to db"
 
 
-# Deprecated
-@v1.route("/tickers", methods=["GET"])
-def get_tickers():
-    tickers = stock_data.get_all_tickers()
-    if tickers:
-        return {
-            "data": tickers,
-            "status": "success",
-        }
-
-    return {"error": "No tickers found"}
-
-
-# Deprecated
-@v1.route("/stock")
-def get_stock_data():
-    stock = request.args.get("stock_name")
-    timeline = request.args.get("timeline")
-    time_unit = request.args.get("time_unit")
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
-
-    try:
-        stock_data = stock_data.get_stock_data(
-            stock, timeline, time_unit, start_date, end_date
-        )
-
-        return {"data": stock_data}
-    except Exception as e:
-        return {"error": f"{e}"}
-
-
 @v1.route("/stock/yf", methods=["GET"])
 def get_stock_yf():
     stock_name = request.args.get("stock_name")
@@ -108,7 +76,7 @@ def add_user():
             "stocks": [],
             "watchlist": [],
             "transactions": [],
-            "balance": 50.0,
+            "balance": 0.0,
         }
         added_user = user.add_user(user_data, _db)
 
@@ -202,6 +170,34 @@ def get_user_stocks():
         }
     except Exception as e:
         return {"status": "failure", "status-code": 404, "message": f"{e}"}
+
+
+@v1.route("/user/balance/add", methods=["POST"])
+@cross_origin()
+def add_balance():
+    _id = request.json.get("_id")
+    amount = float(request.json.get("amount"))
+
+    check = [
+        {"data": _id, "type": str, "var_name": "_id"},
+        {"data": amount, "type": float, "var_name": "amount"},
+    ]
+
+    try:
+        errors_handlers.isEmpty(check)
+        errors_handlers.isCorrectType(check)
+    except Exception as e:
+        return {"status": "failure", "status-code": 400, "message": f"{e}"}
+
+    try:
+        user.add_balance(_id, _db, amount)
+        return {
+            "status": "success",
+            "status-code": 200,
+            "message": f"USD {amount} added to balance",
+        }
+    except Exception as e:
+        return {"status": "failure", "status-code": 500, "message": f"{e}"}
 
 
 @v1.route("/trade/buy", methods=["POST"])

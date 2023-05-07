@@ -10,25 +10,46 @@ import "./index.css";
 const Stock = () => {
   // Get stock name from URL
   const { stockName } = useParams<{ stockName: string }>();
+  // Transaction type (buy or sell)
   const [transactionType, setTransactionType] = useState("buy");
+  // Quantity of stocks to buy or sell
   const [quantity, setQuantity] = useState<any>(0);
+  // Amount of money to buy or sell
   const [amount, setAmount] = useState<any>(0);
+  // Transaction method (quantity or amount)
   const [transactionMethod, setTransactionMethod] = useState("quantiy");
+  // If the user can buy
   const [canBuy, setCanBuy] = useState(false);
+  // If the user can sell
   const [canSell, setCanSell] = useState(false);
+  // Retrieve user id and username from local storage
   const id = window.localStorage.getItem("id");
   const username = window.localStorage.getItem("username");
+
+  // Get the company name from the stock name
   const companyName = tickers.filter((t: any) => t.symbol === stockName)[0]
     .companyName;
+
+  // High modifer
+  const [highModifier, setHighModifier] = useState<number>(2);
+
+  // API URL
   const API_URL = "http://127.0.0.1:5000/api/v1";
+
+  // If the stock is in the user's watchlist
   const [stockInWatchlist, setStockInWatchlist] = useState(false);
+  // User's balance
   const [balance, setBalance] = useState<number>(0);
+  // User's current stock holdings
   const [currentStockHoldings, setCurrentStockHoldings] = useState<number>(-1);
+  // If the axios request is loading
   const [axiosLoading, setAxiosLoading] = useState<boolean>(false);
+  // If the transaction is successful or not, default is null
   const [transactionStatus, setTransactionStatus] = useState<boolean | null>(
     true
   );
 
+  // Add stock to watchlist
   const addToWatchlist = () => {
     axios
       .post(`${API_URL}/watchlist/add`, {
@@ -43,6 +64,7 @@ const Stock = () => {
       });
   };
 
+  // Remove stock from watchlist
   const removeFromWatchlist = () => {
     axios
       .post(`${API_URL}/watchlist/remove`, {
@@ -60,6 +82,7 @@ const Stock = () => {
 
   useEffect(() => {
     setTransactionStatus(null);
+    // Get user balance and current stock holdings
     axios
       .get(`${API_URL}/user`, {
         params: {
@@ -78,6 +101,7 @@ const Stock = () => {
   }, []);
 
   useEffect(() => {
+    // Get user watchlist
     axios
       .get(`${API_URL}/watchlist/get?user_id=${id}`)
       .then((res) => {
@@ -86,6 +110,7 @@ const Stock = () => {
           watchlist.filter((stock: any) => stock.stock_name === stockName)
             .length > 0;
 
+        // Set stock in watchlist
         setStockInWatchlist(isExist);
       })
       .catch((err) => {
@@ -93,15 +118,24 @@ const Stock = () => {
       });
   }, []);
 
+  // Cost of the stock
   const [cost, setCost] = useState(0.0);
+  // High and low of the stock
   const [high, setHigh] = useState<number>(0);
   const [low, setLow] = useState<number>(0);
+
+  // Difference between current price and previous close
   const [diff, setDiff] = useState<number>(0.0);
+  // Difference percentage between current price and previous close
   const [diffPercent, setDiffPercent] = useState<number>(0.0);
 
+  // Previous close price
   const [prevClose, setPrevClose] = useState<number>(0);
+  // Ref for cost
   const costIndicatorRef = useRef<HTMLDivElement>(null);
+  // Loading state
   const [loading, setLoading] = useState<boolean>(true);
+  // Chart data
   const [chartData, setChartData] = useState({
     labels: [""],
     datasets: [
@@ -116,10 +150,15 @@ const Stock = () => {
 
   useEffect(() => {
     setLoading(true);
+    // Get stock data
     axios
       .get(`${API_URL}/stock/yf?stock_name=${stockName}`)
       .then((res) => {
-        const addToHigh = (res.data.data.high - res.data.data.low) * 2;
+        if (res.data.data.current_price < 50.0) {
+          setHighModifier(5);
+        }
+        const addToHigh =
+          (res.data.data.high - res.data.data.low) * highModifier;
         setCost(res.data.data.current_price);
         setHigh(res.data.data.high + addToHigh);
         setLow(res.data.data.low);
@@ -203,6 +242,10 @@ const Stock = () => {
   };
 
   const buyStock = () => {
+    if (!canBuy) {
+      setTransactionStatus(false);
+      return;
+    }
     setAxiosLoading(true);
     setTransactionStatus(null);
     const transactionCost: number =
@@ -239,6 +282,10 @@ const Stock = () => {
   };
 
   const sellStock = () => {
+    if (!canSell) {
+      setTransactionStatus(false);
+      return;
+    }
     setAxiosLoading(true);
     setTransactionStatus(null);
     const transactionCost: number =
@@ -278,10 +325,8 @@ const Stock = () => {
     <section id="stock">
       {transactionStatus !== null && (
         <>
-          <div className="banner">
-            <div
-              className={`banner-content ${transactionStatus ? "buy" : "sell"}`}
-            >
+          <div className={`banner ${transactionStatus ? "buy" : "sell"}`}>
+            <div className={`banner-content`}>
               <div className="banner-text">
                 <span className="banner-message">
                   {transactionStatus === true
