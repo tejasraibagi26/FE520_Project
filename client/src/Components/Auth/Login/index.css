@@ -51,3 +51,11 @@ input:focus {
 .width-full {
   width: 35%;
 }
+
+.subtext {
+  cursor: pointer;
+}
+
+.subtext:hover {
+  text-decoration: underline;
+}

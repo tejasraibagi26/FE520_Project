@@ -41,6 +41,9 @@ const Watchlist = () => {
           <h1>Watchlist</h1>
         </div>
         <div className="watchlists">
+          {watchlist.length === 0 && (
+            <p>Add stocks to Watchlist to see them here..</p>
+          )}
           {watchlist.map((item) => {
             return (
               <div
