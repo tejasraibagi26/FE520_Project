@@ -49,7 +49,7 @@ python3 run.py
 # Backend API
 
 - Current Version: v1
-- Base URL: http://127.0.0.1/api/v1
+- Base URL: http://127.0.0.1:5000/api/v1
 
 ## Routes
 
