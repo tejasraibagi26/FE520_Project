@@ -162,6 +162,15 @@ const Signup = () => {
           >
             {loading ? "Loading..." : "Sign Up"}
           </div>
+          <div className="spacer"></div>
+          <div
+            className="subtext"
+            onClick={(e) => {
+              navigate("/login");
+            }}
+          >
+            Already have an account? Login here.
+          </div>
           <div className="spacer" />
           {apiError && <p className="error">{apiError}</p>}
         </div>

@@ -129,6 +129,15 @@ const Login = ({ updateLoggedIn }: ILoginPageProps) => {
           >
             {loading ? "Loading..." : "Login"}
           </div>
+          <div className="spacer"></div>
+          <div
+            className="subtext"
+            onClick={(e) => {
+              navigate("/signup");
+            }}
+          >
+            Don't have an account? Register Now!
+          </div>
           <div className="spacer" />
           {apiError !== "" && <p className="error">{apiError}</p>}
         </div>

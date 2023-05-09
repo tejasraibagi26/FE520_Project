@@ -65,10 +65,6 @@ def add_user():
         return {"status": "failure", "message": f"{e}", "status-code": 400}
 
     try:
-        # user_exists = user.get_user_by_email(email, password, _db)
-        # if user_exists is not None:
-        #     raise Exception("User already exists")
-
         user_data = {
             "username": username,
             "password": password,
@@ -375,6 +371,7 @@ def sell_stock():
                 "stockName": stock_name,
             }
         },
+        "$set": {"balance": round(new_balance, 2)},
     }
     total_shares_after_sell = total_shares - quantity
     if total_shares_after_sell <= 0:
@@ -449,8 +446,6 @@ def add_to_watchlist():
 
     add_stock = {"$push": {"watchlist": data}}
     modify = user.update_user(_id, add_stock, _db)
-    # modify = _db.user.update_one(
-    #     {'_id': ObjectId(_id)}, add_stock).modified_count
 
     return {
         "status": "success",
